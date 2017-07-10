@@ -19,7 +19,8 @@ $unique_ipv4 = $comp | foreach {$_.ipv4address} | sort-object | get-unique
 
 #compare $unique_ipv4 to $sorted_ipv4 and assign just the additional 
 #IPv4 addresses in $sorted_ipv4 to $duplicate_ipv4
-$duplicate_ipv4 = Compare-object -referenceobject $unique_ipv4 -differenceobject $sorted_ipv4 | foreach {$_.inputobject}
+#Filter out specific IPs or IP ranges using Where-Object {$_ -notmatch "10.17.95" }
+$duplicate_ipv4 = Compare-object -referenceobject $unique_ipv4 -differenceobject $sorted_ipv4 | foreach {$_.inputobject} | Where-Object {$_ -notmatch "10.17.95" } | Where-Object {$_ -notmatch "10.2.95" } | Where-Object {$_ -notmatch "10.20.13.121" }
 
 #For each instance in $duplicate_ipv4 and for each instance 
 #in $comp, compare $duplicate_ipv4 to $comp If they are equal, assign
@@ -35,7 +36,43 @@ foreach ($duplicate_inst in $duplicate_ipv4)
     }
 }
 
-#Pipe all of the duplicate computers to a formatted table
+#Pipe all of the duplicate computers to a formatted table and a csv file
 $duplicate_comp | ft name,ipv4address -a
 $duplicate_comp | Export-CSV $csvFileName -NoTypeInformation
-write-host This list can be found at $csvFileName
+#write-host This list can be found at $csvFileName //No one is going to see this...
+
+$Server = "smtp.gmail.com"
+$Port = 587
+$FromEmail = "YOUREMAIL@gmail.com"
+$FromPassword = "GOOLGEAPPSPASSWORD"
+$ToEmail = "YOUREMAIL@gmail.com"
+$attachmentpath = $csvFileName
+$message = New-Object System.Net.Mail.MailMessage $FromEmail, $ToEmail
+$message.Subject = "DNS Duplicates Report"
+$message.IsBodyHTML = $true
+
+$items = New-Object System.Collections.Generic.List[System.Object]
+foreach ($log in $duplicate_comp) {
+$items.Add($log.name + " " + $log.ipv4address) 
+}
+
+if ($items.count -gt 0){
+	foreach ($line in $items)
+	{
+		$message.Body = $message.Body + $line + "`r `n"
+	}
+$attachment = New-Object Net.Mail.Attachment($attachmentpath)
+$message.Attachments.Add($attachment)
+}
+else{
+write-host "No duplicates found in DNS"
+$message.Body = "No duplicates found in DNS"
+}
+
+
+$smtp = New-Object System.Net.Mail.SmtpClient($Server, $Port); #Create SMTPClient and connect to Email Server
+$smtp.EnableSSL = $true     #Set SSL as enabled
+$smtp.Credentials = New-Object System.Net.NetworkCredential($FromEmail, $FromPassword);  #Log in to the email server
+
+$smtp.Send($message)  #Send Message
+$message.Dispose()  #Destroy Message
