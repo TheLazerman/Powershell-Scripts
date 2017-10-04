@@ -1,0 +1,1 @@
+Import-StartLayout -LayoutPath  C:\Windows\Temp\DefaultLayout.xml -MountPath $env:SystemDrive\
