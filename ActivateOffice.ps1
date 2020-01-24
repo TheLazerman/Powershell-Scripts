@@ -7,5 +7,5 @@ foreach ($file in $paths){
 	}
 }
 
-cscript.exe $OSPP "/sethst:KMS-SERVER"
+cscript.exe $OSPP "/sethst:ssho-kms.simfoods.com"
 cscript.exe $OSPP "/act"
