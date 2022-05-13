@@ -1,3 +1,4 @@
+[void][System.Reflection.Assembly]::LoadWithPartialName("System.Speech");
 function CatFact {
 	    $CatFact = (Invoke-WebRequest -Uri 'https://us-central1-cat-api-fb6de.cloudfunctions.net/fact')
     #$SpeechSynth.SelectVoice('Microsoft Zira Desktop')
